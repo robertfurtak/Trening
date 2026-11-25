@@ -9,7 +9,7 @@ const num = s => s == null ? null : parseFloat(String(s).replace(/\s/g, '').repl
 async function get(url, json) {
   for (let a = 0; a < 3; a++) {
     try {
-      const r = await fetch(url, { headers: { ...H, Accept: json ? 'application/json' : 'text/html' } });
+      const r = await fetch(url, { headers: { ...H, Accept: json ? 'application/json' : 'text/html' }, signal: AbortSignal.timeout(20000) });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return json ? await r.json() : await r.text();
     } catch (e) { if (a === 2) throw e; await sleep(1500 * (a + 1)); }
@@ -88,9 +88,9 @@ for (const q of terms) {
   result.q[q] = [];
   for (const [name, fn] of Object.entries(STORES)) {
     try {
-      const items = (await fn(q)).slice(0, 20);
+      const t0 = Date.now(); const items = (await fn(q)).slice(0, 20);
       result.q[q].push(...items);
-      stats[name] = (stats[name] || 0) + items.length;
+      stats[name] = (stats[name] || 0) + items.length; console.log('  ', name, items.length, (Date.now()-t0)+'ms');
     } catch (e) {
       result.err[name] = (result.err[name] || 0) + 1;
       console.log(`! ${name} "${q}": ${e.message}`);
